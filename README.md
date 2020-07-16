@@ -59,7 +59,7 @@ export default () => {
 }
 ```
 
-### Code spltting
+### Code splitting
 
 🚧 upstream: esbuild: only work with esm format
 
