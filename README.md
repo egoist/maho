@@ -4,6 +4,11 @@ A framework for building server-rendered or static websites, powered by React an
 
 This framework is not production-ready yet, since esbuild itself is not mature enough, (but [evanw](https://github.com/evanw) is working on that).
 
+![maho](https://user-images.githubusercontent.com/8784712/87699412-68451a80-c7c7-11ea-919f-a09ce73fe616.gif)
+
+Each rebuild is a full bundle (both server-side and client-side) yet takes only <100ms.
+
+
 ## Install
 
 ```bash
