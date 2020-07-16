@@ -3,10 +3,6 @@
   "name": "maho",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {
-    "maho": "node -r esm -r esbuild-register packages/maho/src/cli.ts",
-    "maho-app": "node -r esm -r esbuild-register packages/create-maho-app/src/cli.ts"
-  },
   "workspaces": [
     "packages/*",
     "website"

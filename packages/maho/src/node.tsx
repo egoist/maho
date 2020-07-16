@@ -127,9 +127,7 @@ class Maho {
       const routesContent = `
       import React from 'react'
       import { Routes as _Routes, Route } from 'react-router-dom'
-      const { useMahoContext, MahoContext } = process.env.IS_SERVER ? __node_require__('${
-        this.options.dev ? 'maho/src/index' : 'maho'
-      }') : require('${this.options.dev ? 'maho/src/index' : 'maho'}')
+      import { useMahoContext, MahoContext } = 'maho'
 
       ${routes
         .map((route) => {
