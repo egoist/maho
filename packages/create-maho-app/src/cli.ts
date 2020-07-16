@@ -19,9 +19,11 @@ stream.source(['**/*'], {
 
 stream.dest(outDir).then(() => {
   console.log(`
-  Success!
-
-  Now \`cd ${outDir}\` and run \`yarn dev\` or \`npm run dev\` 
+  Success! Now run:
+  
+  cd ${outDir}
+  yarn
+  yarn dev
   `)
 }).catch((error) => {
   console.error(error)
