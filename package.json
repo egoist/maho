@@ -1,0 +1,22 @@
+{
+  "private": true,
+  "name": "maho",
+  "version": "0.0.0",
+  "license": "MIT",
+  "scripts": {
+    "maho": "node -r esm -r esbuild-register packages/maho/src/cli.ts",
+    "maho-app": "node -r esm -r esbuild-register packages/create-maho-app/src/cli.ts"
+  },
+  "workspaces": [
+    "packages/*",
+    "website"
+  ],
+  "devDependencies": {
+    "@egoist/prettier-config": "0.1.0",
+    "@types/node": "^14.0.23",
+    "ava": "^3.10.1",
+    "lerna": "^3.22.1",
+    "prettier": "^2.0.5",
+    "typescript": "^3.9.6"
+  }
+}

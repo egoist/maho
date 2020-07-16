@@ -1,0 +1,42 @@
+{
+  "name": "maho",
+  "version": "0.0.0",
+  "bin": "dist/cli.js",
+  "main": "dist/index.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/cli.ts src/node.tsx src/index.ts --dts",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "cac": "^6.6.1",
+    "chokidar": "^3.4.1",
+    "esbuild": "^0.6.3",
+    "fast-glob": "^3.2.4",
+    "fs-extra": "^9.0.1",
+    "history": "^5.0.0",
+    "joycon": "^2.2.5",
+    "polka": "^0.5.2",
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1",
+    "react-helmet": "^6.1.0",
+    "react-router-dom": "^6.0.0-beta.0",
+    "serve-static": "^1.14.1",
+    "sirv": "^1.0.1",
+    "ws": "^7.3.1"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^9.0.1",
+    "@types/react": "^16.9.43",
+    "@types/react-dom": "^16.9.8",
+    "@types/react-helmet": "^6.0.0",
+    "@types/serve-static": "^1.13.4",
+    "@types/ws": "^7.2.6",
+    "esbuild-register": "^1.0.2",
+    "esm": "^3.2.25",
+    "fast-glob": "^3.2.4",
+    "tsup": "^2.0.3"
+  }
+}

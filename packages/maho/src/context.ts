@@ -1,0 +1,14 @@
+import React from 'react'
+import { HelmetData } from 'react-helmet'
+
+export const MahoContext = React.createContext<{ helmet: HelmetData, statusCode: number } | null>(
+  null,
+)
+
+export const useMahoContext = () => {
+  const context = React.useContext(MahoContext)
+  if (!context) {
+    throw new Error(`cannot get maho context`)
+  }
+  return context
+}
