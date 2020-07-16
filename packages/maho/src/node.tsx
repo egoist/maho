@@ -127,7 +127,7 @@ class Maho {
       const routesContent = `
       import React from 'react'
       import { Routes as _Routes, Route } from 'react-router-dom'
-      import { useMahoContext, MahoContext } = 'maho'
+      import { useMahoContext, MahoContext } from 'maho'
 
       ${routes
         .map((route) => {
