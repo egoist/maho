@@ -1,8 +1,11 @@
 {
   "name": "create-maho-app",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "bin": "dist/cli.js",
-  "files": ["dist", "template"],
+  "files": [
+    "dist",
+    "template"
+  ],
   "scripts": {
     "build": "tsup src/cli.ts",
     "prepublishOnly": "npm run build"
