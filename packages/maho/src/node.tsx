@@ -187,7 +187,7 @@ class Maho {
       }
 
       export const App = ({ context, url, Router }) => {
-        if (!process.env.IS_SERVER) {
+        if (!process.env.IS_SERVER && process.env.NODE_ENV === 'development') {
           useLiveReload()
         }
         return <MahoContext.Provider value={context}>
