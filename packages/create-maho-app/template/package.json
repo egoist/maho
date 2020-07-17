@@ -7,5 +7,9 @@
   },
   "dependencies": {
     "maho": "latest"
+  },
+  "devDependencies": {
+    "@types/react": "^16.9.43",
+    "@types/react-helmet": "^6.0.0"
   }
 }
