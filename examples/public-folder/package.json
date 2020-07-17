@@ -1,0 +1,11 @@
+{
+  "private": true,
+  "scripts": {
+    "dev": "maho",
+    "build": "maho build",
+    "start": "maho start"
+  },
+  "dependencies": {
+    "maho": "^0.1.3"
+  }
+}

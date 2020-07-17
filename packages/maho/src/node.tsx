@@ -7,7 +7,7 @@ import React from 'react'
 import serveStatic from 'serve-static'
 import Helmet from 'react-helmet'
 import Document from './Document'
-import { Service, startService } from 'esbuild'
+import { Service, startService, Loader } from 'esbuild'
 import WebSocket from 'ws'
 import { StaticRouter } from 'react-router-dom/server'
 import { MahoContext } from './context'
@@ -62,12 +62,21 @@ class Maho {
         this.options.dev ? 'development' : 'production',
       ),
     }
+    const loader: {
+      [ext: string]: Loader
+    } = {
+      '.svg': 'file',
+      '.jpg': 'file',
+      '.png': 'file',
+      '.gif': 'file',
+      '.css': 'file'
+    }
     await Promise.all([
       await this.serverService.build({
         platform: 'node',
         format: 'cjs',
         bundle: true,
-        loader: {},
+        loader,
         minify: !this.options.dev,
         entryPoints: [join(this.cacheDir, 'templates/routes.jsx')],
         outdir: join(this.cacheDir, 'server'),
@@ -85,7 +94,7 @@ class Maho {
         platform: 'browser',
         format: 'cjs',
         bundle: true,
-        loader: {},
+        loader,
         minify: !this.options.dev,
         entryPoints: [this.clientEntryPath],
         outdir: join(this.cacheDir, 'client'),
@@ -294,6 +303,7 @@ class Maho {
     const server = polka()
 
     server.use('/_maho', serveStatic(join(this.cacheDir, 'client')))
+    server.use(serveStatic(join(this.options.dir, 'public')))
 
     server.get('*', (req: any, res: any) => {
       if (this.options.dev) {
