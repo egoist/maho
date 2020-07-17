@@ -1,6 +1,6 @@
 {
   "name": "maho",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "bin": "dist/cli.js",
   "main": "dist/index.js",
   "files": [

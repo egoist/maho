@@ -1,6 +1,6 @@
 {
   "name": "create-maho-app",
-  "version": "0.1.2",
+  "version": "0.1.4",
   "bin": "dist/cli.js",
   "files": [
     "dist",
