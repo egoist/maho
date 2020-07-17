@@ -4,7 +4,8 @@
   "bin": "dist/cli.js",
   "main": "dist/index.js",
   "files": [
-    "dist"
+    "dist",
+    "/env.d.ts"
   ],
   "scripts": {
     "build": "tsup src/cli.ts src/node.tsx src/index.ts --dts",
@@ -13,18 +14,20 @@
   "dependencies": {
     "cac": "^6.6.1",
     "chokidar": "^3.4.1",
+    "devalue": "^2.0.1",
     "esbuild": "^0.6.3",
     "fast-glob": "^3.2.4",
     "fs-extra": "^9.0.1",
     "history": "^5.0.0",
     "joycon": "^2.2.5",
     "polka": "^0.5.2",
-    "react": "^16.13.1",
-    "react-dom": "^16.13.1",
+    "react": "^0.0.0-experimental-7f28234f8",
+    "react-dom": "^0.0.0-experimental-7f28234f8",
     "react-helmet": "^6.1.0",
     "react-router-dom": "^6.0.0-beta.0",
     "serve-static": "^1.14.1",
     "sirv": "^1.0.1",
+    "swr": "^0.2.3",
     "ws": "^7.3.1"
   },
   "devDependencies": {

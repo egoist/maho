@@ -1,9 +1,11 @@
 import React from 'react'
 import { HelmetData } from 'react-helmet'
 
-export const MahoContext = React.createContext<{ helmet: HelmetData, statusCode: number } | null>(
-  null,
-)
+export const MahoContext = React.createContext<{
+  helmet: HelmetData
+  statusCode: number
+  routeData: { [path: string]: any }
+} | null>(null)
 
 export const useMahoContext = () => {
   const context = React.useContext(MahoContext)
