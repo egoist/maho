@@ -67,6 +67,8 @@ export default () => {
 
 🚧 upstream: esbuild
 
+Though CSS is not yet supported, you can use CSS-in-JS solutions like [emotion](./examples/with-emotion) without any configuration.
+
 ### Hot reloading
 
 Currently it supports live reload.
