@@ -2,3 +2,4 @@ node_modules
 dist
 types
 .maho
+examples/**/*/yarn.lock
