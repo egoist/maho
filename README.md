@@ -67,7 +67,7 @@ export default () => {
 
 🚧 upstream: esbuild
 
-Though CSS is not yet supported, you can use CSS-in-JS solutions like [emotion](./examples/with-emotion) without any configuration.
+Though directly importing CSS in your JavaScript / TypeScript code is not yet supported, you can use CSS-in-JS solutions like [emotion](./examples/with-emotion) without any configuration, alternative you can have CSS in [`./public` folder](./examples/public-folder) and reference them using `<link>` tag in your components.
 
 ### Hot reloading
 
