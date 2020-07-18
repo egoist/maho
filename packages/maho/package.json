@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "files": [
     "dist",
-    "/env.d.ts"
+    "/global.d.ts"
   ],
   "scripts": {
     "build": "tsup src/cli.ts src/node.tsx src/index.ts --dts",
