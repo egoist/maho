@@ -10,6 +10,7 @@ import devalue from 'devalue'
 import Document from './Document'
 import { Service, startService, Loader } from 'esbuild'
 import WebSocket from 'ws'
+import type { SetRequired } from 'type-fest'
 import { StaticRouter } from 'react-router-dom/server'
 import { MahoContext } from './context'
 import { getExternalDeps } from './external'
@@ -27,10 +28,15 @@ const OWN_PKG = JSON.parse(
 export type Options = {
   dir?: string
   dev?: boolean
+  /**
+   * Watch additional resources
+   * Can be one or more glob patterns
+   */
+  watch?: string | string[]
 }
 
 class Maho {
-  options: Required<Options>
+  options: SetRequired<Options, 'dir' | 'dev'>
   cacheDir: string
   serverEntryPath: string
   clientEntryPath: string
@@ -310,6 +316,22 @@ class Maho {
           await this.bundle()
           reload()
         })
+
+      if (this.options.watch) {
+        watch(this.options.watch, {
+          ignoreInitial: true,
+          cwd: this.options.dir,
+          ignored: [
+            join(pagesDir, '**/*'),
+            '!**/node_modules**/',
+            '!**/.maho/**',
+            '!**/out/**',
+          ],
+        }).on('all', async () => {
+          await this.bundle()
+          reload()
+        })
+      }
     }
   }
 
@@ -407,7 +429,7 @@ class Maho {
       if (req.headers.accept === 'application/json') {
         res.setHeader('content-type', 'application/json')
         res.end(JSON.stringify(routeData))
-        return 
+        return
       }
       const context: any = { url: req.url, statusCode: 200, routeData }
       const main = renderToString(
