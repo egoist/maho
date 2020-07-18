@@ -1,7 +1,7 @@
 import { resolve, join } from 'path'
 import polka from 'polka'
 import glob from 'fast-glob'
-import { outputFile, readFileSync } from 'fs-extra'
+import { outputFile, readFileSync, remove } from 'fs-extra'
 import { renderToString, renderToStaticMarkup } from 'react-dom/server'
 import React from 'react'
 import serveStatic from 'serve-static'
@@ -131,6 +131,8 @@ class Maho {
   }
 
   async prepare() {
+    await remove(join(this.cacheDir, 'client'))
+
     const pagesDir = join(this.options.dir, 'pages')
     const pageGlobs = ['**/*.{ts,tsx,js,jsx}']
     const files = new Set(
@@ -383,7 +385,7 @@ class Maho {
 
     const server = polka()
 
-    server.use('/_maho', serveStatic(join(this.cacheDir, 'client')))
+    server.use(serveStatic(join(this.cacheDir, 'client')))
     server.use(serveStatic(join(this.options.dir, 'public')))
 
     server.get('*', async (req: any, res: any) => {
@@ -450,7 +452,7 @@ class Maho {
               })}`,
             }}
           ></script>
-          <script src={`/_maho/client-entry.js?t=${buildId}`} />
+          <script src={`/client-entry.js?t=${buildId}`} />
         </>
       )
       const html = renderToStaticMarkup(
