@@ -14,7 +14,7 @@ They all use esbuild too but:
 
 - Maho can also do server-side rendering
 - Maho uses esbuild for the whole bundle process instead of only using it to compile TypeScript, FYI they use Rollup in production build which is still much slower than esbuild.
-- Maho is a React framework, adding support for Vue or Svelte is a low priorty which totally depends on how this project goes and, [my funding status](https://github.com/sponsors/egoist)
+- Maho is a React framework, Vue integration will be done in another framework: [Ream](https://github.com/ream/ream), and the progress totally depends on [my funding status](https://github.com/sponsors/egoist).
 
 
 ## Install
