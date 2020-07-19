@@ -1,7 +1,7 @@
-import { resolve, join } from 'path'
+import { resolve, join, relative } from 'path'
 import polka from 'polka'
 import glob from 'fast-glob'
-import { outputFile, readFileSync, remove } from 'fs-extra'
+import { outputFile, readFileSync, remove, existsSync } from 'fs-extra'
 import { renderToString, renderToStaticMarkup } from 'react-dom/server'
 import React from 'react'
 import serveStatic from 'serve-static'
@@ -33,11 +33,17 @@ export type Options = {
    * Can be one or more glob patterns
    */
   watch?: string | string[]
+  /**
+   * Output ES module
+   * Also enables code splitting
+   */
+  esm?: boolean
 }
 
 class Maho {
   options: SetRequired<Options, 'dir' | 'dev'>
   cacheDir: string
+  srcDir: string
   serverEntryPath: string
   clientEntryPath: string
   serverService?: Service
@@ -58,6 +64,7 @@ class Maho {
       dev: Boolean(options.dev),
     }
 
+    this.srcDir = existsSync(join(this.options.dir, 'src/pages')) ? join(this.options.dir, 'src') : this.options.dir
     this.cacheDir = join(this.options.dir, '.maho')
     this.serverEntryPath = join(this.cacheDir, 'templates/server-entry.jsx')
     this.clientEntryPath = join(this.cacheDir, 'templates/client-entry.jsx')
@@ -111,13 +118,15 @@ class Maho {
       }),
       await this.serverService.build({
         platform: 'browser',
-        format: 'cjs',
+        format: this.options.esm ? 'esm' : 'cjs',
+        splitting: this.options.esm,
         bundle: true,
         loader,
         minify: !this.options.dev,
         entryPoints: [this.clientEntryPath],
         outdir: join(this.cacheDir, 'client'),
         sourcemap: this.options.dev,
+        metafile: join(this.cacheDir, 'metafile.json'),
         define: {
           ...commonDefine,
           'process.browser': 'true',
@@ -130,16 +139,31 @@ class Maho {
     console.log(`Bundle - success in ${Math.floor(timeInMs)}ms`)
   }
 
-  async prepare() {
+  get meta(): { esm?: boolean } {
+    return require(join(this.cacheDir, 'meta.json'))
+  }
+
+  async prepare(type: 'dev-server' | 'build' | 'prod-server') {
+    if (type === 'prod-server') {
+      this.options.esm = this.meta.esm
+      return
+    }
+
     await remove(join(this.cacheDir, 'client'))
 
-    const pagesDir = join(this.options.dir, 'pages')
+    await outputFile(join(this.cacheDir, 'meta.json'), JSON.stringify({
+      esm: this.options.esm
+    }), 'utf8')
+
+    const pagesDir = join(this.srcDir, 'pages')
     const pageGlobs = ['**/*.{ts,tsx,js,jsx}']
     const files = new Set(
       await glob(pageGlobs, {
         cwd: pagesDir,
       }),
     )
+
+    const toRelative = (absolute: string) => `./${relative(join(this.cacheDir, 'templates'), absolute)}`
 
     const emitTemplates = async () => {
       const routes = (this.routes = [...files].map((file) => {
@@ -163,7 +187,17 @@ class Maho {
 
       ${routes
         .map((route) => {
-          return `const { default: Route_${route.name}, load: load_${route.name} } = require("${route.absolute}")`
+          return `
+          let Route_${route.name}
+          let load_${route.name}
+          if (process.browser && ${this.options.esm}) {
+            Route_${route.name} = React.lazy(() => import("${toRelative(route.absolute)}"))
+          } else {
+            const res = require("${toRelative(route.absolute)}")
+            Route_${route.name} = res.default
+            load_${route.name} = res.load
+          }
+          `
         })
         .join('\n')}
 
@@ -175,7 +209,7 @@ class Maho {
         return <div>404</div>
       }
 
-      export const loadFunctions = [
+      export const loadFunctions = process.browser ? undefined : [
         ${routes
           .map((route) => {
             return `{
@@ -322,7 +356,7 @@ class Maho {
       if (this.options.watch) {
         watch(this.options.watch, {
           ignoreInitial: true,
-          cwd: this.options.dir,
+          cwd: this.srcDir,
           ignored: [
             join(pagesDir, '**/*'),
             '!**/node_modules**/',
@@ -338,7 +372,7 @@ class Maho {
   }
 
   async build() {
-    await this.prepare()
+    await this.prepare('build')
     await this.bundle()
     if (this.serverService) {
       this.serverService.stop()
@@ -377,16 +411,18 @@ class Maho {
 
   async startServer() {
     if (this.options.dev) {
-      await this.prepare()
+      await this.prepare('dev-server')
       await this.bundle()
 
       this.startWss()
+    } else {
+      await this.prepare('prod-server')
     }
 
     const server = polka()
 
     server.use(serveStatic(join(this.cacheDir, 'client')))
-    server.use(serveStatic(join(this.options.dir, 'public')))
+    server.use(serveStatic(join(this.srcDir, 'public')))
 
     server.get('*', async (req: any, res: any) => {
       if (this.options.dev) {
@@ -452,7 +488,7 @@ class Maho {
               })}`,
             }}
           ></script>
-          <script src={`/client-entry.js?t=${buildId}`} />
+          <script type={this.options.esm ? 'module' : undefined} src={this.options.esm ? `/.maho/templates/client-entry.js?t=${buildId}` : `/client-entry.js?t=${buildId}`} />
         </>
       )
       const html = renderToStaticMarkup(

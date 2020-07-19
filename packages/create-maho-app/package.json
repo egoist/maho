@@ -14,6 +14,6 @@
     "majo": "^0.10.1"
   },
   "devDependencies": {
-    "tsup": "^2.0.3"
+    "tsup": "^2.1.0"
   }
 }

@@ -8,8 +8,9 @@ const cli = cac('maho')
 cli
   .command('[dir]', 'Serve a directory in dev mode')
   .option('-w, --watch <glob>', 'Watching additional paths')
-  .action(async (dir, options: { watch: string | string[] }) => {
-    const app = maho({ dir, dev: true, watch: options.watch })
+  .option('--esm', 'Output ES module')
+  .action(async (dir, options: { watch?: string | string[], esm?: boolean }) => {
+    const app = maho({ dir, dev: true, watch: options.watch, esm: options.esm })
     await app.startServer()
   })
 
@@ -20,8 +21,9 @@ cli
     await app.startServer()
   })
 
-cli.command('build [dir]', 'Build a directory').action(async (dir) => {
-  const app = maho({ dir, dev: false })
+cli.command('build [dir]', 'Build a directory')
+.option('--esm', 'Output ES module').action(async (dir, options: {esm?: boolean}) => {
+  const app = maho({ dir, dev: false, esm: options.esm })
   await app.build()
 })
 

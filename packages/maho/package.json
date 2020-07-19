@@ -15,7 +15,7 @@
     "cac": "^6.6.1",
     "chokidar": "^3.4.1",
     "devalue": "^2.0.1",
-    "esbuild": "^0.6.3",
+    "esbuild": "^0.6.4",
     "fast-glob": "^3.2.4",
     "fs-extra": "^9.0.1",
     "history": "^5.0.0",
@@ -41,6 +41,6 @@
     "esbuild-register": "^1.0.2",
     "esm": "^3.2.25",
     "fast-glob": "^3.2.4",
-    "tsup": "^2.0.3"
+    "tsup": "^2.1.0"
   }
 }
