@@ -27,8 +27,6 @@ const OWN_PKG = JSON.parse(
 
 import sourceMapSupport from 'source-map-support'
 
-sourceMapSupport.install()
-
 export type Options = {
   dir?: string
   dev?: boolean
@@ -78,6 +76,25 @@ class Maho {
     this.buildId = `${Date.now()}`
 
     this.routes = []
+
+    sourceMapSupport.install({
+      retrieveSourceMap: (source) => {
+        if (!source.startsWith(this.cacheDir)) {
+          return null
+        }
+        try {
+          const map = JSON.parse(readFileSync(source + '.map', 'utf-8'))
+          // Output correct path in error stack by using absolute path in source map
+          map.sources = map.sources.map((source: string) => resolve(source))
+          return {
+            url: source,
+            map,
+          }
+        } catch (error) {
+          return null
+        }
+      },
+    })
   }
 
   async bundle() {
