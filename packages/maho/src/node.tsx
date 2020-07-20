@@ -25,6 +25,8 @@ const OWN_PKG = JSON.parse(
   readFileSync(join(__dirname, '../package.json'), 'utf-8'),
 )
 
+import sourceMapSupport from 'source-map-support'
+
 export type Options = {
   dir?: string
   dev?: boolean
@@ -64,7 +66,9 @@ class Maho {
       dev: Boolean(options.dev),
     }
 
-    this.srcDir = existsSync(join(this.options.dir, 'src/pages')) ? join(this.options.dir, 'src') : this.options.dir
+    this.srcDir = existsSync(join(this.options.dir, 'src/pages'))
+      ? join(this.options.dir, 'src')
+      : this.options.dir
     this.cacheDir = join(this.options.dir, '.maho')
     this.serverEntryPath = join(this.cacheDir, 'templates/server-entry.jsx')
     this.clientEntryPath = join(this.cacheDir, 'templates/client-entry.jsx')
@@ -72,6 +76,25 @@ class Maho {
     this.buildId = `${Date.now()}`
 
     this.routes = []
+
+    sourceMapSupport.install({
+      retrieveSourceMap: (source) => {
+        if (!source.startsWith(this.cacheDir)) {
+          return null
+        }
+        try {
+          const map = JSON.parse(readFileSync(source + '.map', 'utf-8'))
+          // Output correct path in error stack by using absolute path in source map
+          map.sources = map.sources.map((source: string) => resolve(source))
+          return {
+            url: source,
+            map,
+          }
+        } catch (error) {
+          return null
+        }
+      },
+    })
   }
 
   async bundle() {
@@ -106,6 +129,7 @@ class Maho {
         minify: !this.options.dev,
         entryPoints: [join(this.cacheDir, 'templates/routes.jsx')],
         outdir: join(this.cacheDir, 'server'),
+        sourcemap: this.options.dev,
         define: {
           ...commonDefine,
           'process.browser': 'false',
@@ -151,9 +175,13 @@ class Maho {
 
     await remove(join(this.cacheDir, 'client'))
 
-    await outputFile(join(this.cacheDir, 'meta.json'), JSON.stringify({
-      esm: this.options.esm
-    }), 'utf8')
+    await outputFile(
+      join(this.cacheDir, 'meta.json'),
+      JSON.stringify({
+        esm: this.options.esm,
+      }),
+      'utf8',
+    )
 
     const pagesDir = join(this.srcDir, 'pages')
     const pageGlobs = ['**/*.{ts,tsx,js,jsx}']
@@ -163,7 +191,8 @@ class Maho {
       }),
     )
 
-    const toRelative = (absolute: string) => `./${relative(join(this.cacheDir, 'templates'), absolute)}`
+    const toRelative = (absolute: string) =>
+      `./${relative(join(this.cacheDir, 'templates'), absolute)}`
 
     const emitTemplates = async () => {
       const routes = (this.routes = [...files].map((file) => {
@@ -181,9 +210,11 @@ class Maho {
         }
       }))
       const routesContent = `
-      import React, { Suspense } from 'react'
+      import React from 'react'
       import { Routes as _Routes, Route, useLocation } from 'react-router-dom'
       import { useMahoContext, MahoContext } from 'maho'
+
+      const Suspense = process.browser ? React.Suspense : ({children}) => children
 
       ${routes
         .map((route) => {
@@ -191,7 +222,9 @@ class Maho {
           let Route_${route.name}
           let load_${route.name}
           if (process.browser && ${this.options.esm}) {
-            Route_${route.name} = React.lazy(() => import("${toRelative(route.absolute)}"))
+            Route_${route.name} = React.lazy(() => import("${toRelative(
+            route.absolute,
+          )}"))
           } else {
             const res = require("${toRelative(route.absolute)}")
             Route_${route.name} = res.default
@@ -423,82 +456,101 @@ class Maho {
 
     server.use(serveStatic(join(this.cacheDir, 'client')))
     server.use(serveStatic(join(this.srcDir, 'public')))
+    const handleRequestError = (fn: any) => async (req: any, res: any) => {
+      try {
+        await fn(req, res)
+      } catch (error) {
+        console.error(error)
+        res.statusCode = 500
+        res.end(this.options.dev ? error.stack : 'server error')
+      }
+    }
 
-    server.get('*', async (req: any, res: any) => {
-      if (this.options.dev) {
-        for (const file of Object.keys(require.cache)) {
-          if (file.startsWith(this.cacheDir)) {
-            delete require.cache[file]
+    server.get(
+      '*',
+      handleRequestError(async (req: any, res: any) => {
+        if (this.options.dev) {
+          for (const file of Object.keys(require.cache)) {
+            if (file.startsWith(this.cacheDir)) {
+              delete require.cache[file]
+            }
           }
         }
-      }
-      const { App, buildId, loadFunctions } = require(join(
-        this.cacheDir,
-        'server/routes.js',
-      )) as {
-        App: any
-        buildId: string
-        loadFunctions: Array<{
-          path: string
-          load: LoadFunction
-        }>
-      }
-      const routes = createRoutesFromArray(
-        this.routes.map((r) => ({ path: r.path })),
-      )
-      const routeMatches = matchRoutes(routes, req.url)
-      const routeData: { [path: string]: any } = {}
-
-      if (routeMatches) {
-        const { load } =
-          loadFunctions.find(
-            (item) => item.path === routeMatches[0].route.path,
-          ) || {}
-        if (load) {
-          const p = generatePath(
-            routeMatches[0].route.path,
-            routeMatches[0].params,
-          )
-          routeData[p] = await load({
-            params: routeMatches[0].params,
-          })
+        const { App, buildId, loadFunctions } = require(join(
+          this.cacheDir,
+          'server/routes.js',
+        )) as {
+          App: any
+          buildId: string
+          loadFunctions: Array<{
+            path: string
+            load: LoadFunction
+          }>
         }
-      }
-      if (req.headers.accept === 'application/json') {
-        res.setHeader('content-type', 'application/json')
-        res.end(JSON.stringify(routeData))
-        return
-      }
-      const context: any = { url: req.url, statusCode: 200, routeData }
-      const main = renderToString(
-        <App Router={StaticRouter} context={context} />,
-      )
-      const helmet = Helmet.renderStatic()
-      context.helmet = helmet
-      const Main = () => (
-        <div id="_maho" dangerouslySetInnerHTML={{ __html: main }}></div>
-      )
-      const Scripts = () => (
-        <>
-          <script
-            dangerouslySetInnerHTML={{
-              __html: `INITIAL_STATE=${devalue({
-                statusCode: context.statusCode,
-                routeData: context.routeData,
-              })}`,
-            }}
-          ></script>
-          <script type={this.options.esm ? 'module' : undefined} src={this.options.esm ? `/.maho/templates/client-entry.js?t=${buildId}` : `/client-entry.js?t=${buildId}`} />
-        </>
-      )
-      const html = renderToStaticMarkup(
-        <MahoContext.Provider value={context}>
-          <Document Main={Main} Scripts={Scripts} />
-        </MahoContext.Provider>,
-      )
-      res.statusCode = context.statusCode
-      res.end(`<!DOCTYPE html>${html}`)
-    })
+        const routes = createRoutesFromArray(
+          this.routes.map((r) => ({ path: r.path })),
+        )
+        const routeMatches = matchRoutes(routes, req.url)
+        const routeData: { [path: string]: any } = {}
+
+        if (routeMatches) {
+          const { load } =
+            loadFunctions.find(
+              (item) => item.path === routeMatches[0].route.path,
+            ) || {}
+          if (load) {
+            const p = generatePath(
+              routeMatches[0].route.path,
+              routeMatches[0].params,
+            )
+            routeData[p] = await load({
+              params: routeMatches[0].params,
+            })
+          }
+        }
+        if (req.headers.accept === 'application/json') {
+          res.setHeader('content-type', 'application/json')
+          res.end(JSON.stringify(routeData))
+          return
+        }
+        const context: any = { url: req.url, statusCode: 200, routeData }
+        const main = renderToString(
+          <App Router={StaticRouter} context={context} />,
+        )
+        const helmet = Helmet.renderStatic()
+        context.helmet = helmet
+        const Main = () => (
+          <div id="_maho" dangerouslySetInnerHTML={{ __html: main }}></div>
+        )
+        const Scripts = () => (
+          <>
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `INITIAL_STATE=${devalue({
+                  statusCode: context.statusCode,
+                  routeData: context.routeData,
+                })}`,
+              }}
+            ></script>
+            <script
+              type={this.options.esm ? 'module' : undefined}
+              src={
+                this.options.esm
+                  ? `/.maho/templates/client-entry.js?t=${buildId}`
+                  : `/client-entry.js?t=${buildId}`
+              }
+            />
+          </>
+        )
+        const html = renderToStaticMarkup(
+          <MahoContext.Provider value={context}>
+            <Document Main={Main} Scripts={Scripts} />
+          </MahoContext.Provider>,
+        )
+        res.statusCode = context.statusCode
+        res.end(`<!DOCTYPE html>${html}`)
+      }),
+    )
 
     server.listen(3000)
     console.log(`Ready  - http://localhost:3000`)

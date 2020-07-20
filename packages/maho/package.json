@@ -27,6 +27,7 @@
     "react-router-dom": "^6.0.0-beta.0",
     "serve-static": "^1.14.1",
     "sirv": "^1.0.1",
+    "source-map-support": "^0.5.19",
     "swr": "^0.2.3",
     "type-fest": "0.16.0",
     "ws": "^7.3.1"
@@ -37,6 +38,7 @@
     "@types/react-dom": "^16.9.8",
     "@types/react-helmet": "^6.0.0",
     "@types/serve-static": "^1.13.4",
+    "@types/source-map-support": "^0.5.2",
     "@types/ws": "^7.2.6",
     "esbuild-register": "^1.0.2",
     "esm": "^3.2.25",
